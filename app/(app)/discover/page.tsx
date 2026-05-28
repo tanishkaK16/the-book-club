@@ -16,6 +16,7 @@ import {
   BookOpen,
   Plus,
   Check,
+  RefreshCw,
   User
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -86,6 +87,7 @@ export default function DiscoverPage() {
   const [recommendedBooks, setRecommendedBooks] = useState<any[]>([])
   const [loadingRecommendations, setLoadingRecommendations] = useState(true)
   const [addedBooks, setAddedBooks] = useState<string[]>([])
+  const [resolvingLink, setResolvingLink] = useState<Record<string, boolean>>({})
 
   // Interactive filters states
   const [searchQuery, setSearchQuery] = useState('')
@@ -229,6 +231,34 @@ export default function DiscoverPage() {
     } catch (err) {
       console.error(err)
       toast.error('Unable to add book to library.')
+    }
+  }
+
+  // 1e. Call backend shop router to fetch customized buy link
+  const handleBuyClick = async (title: string, author: string) => {
+    setResolvingLink(prev => ({ ...prev, [title]: true }))
+    try {
+      const res = await fetch('/api/buy-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.bestUrl) {
+          window.open(data.bestUrl, '_blank', 'noopener,noreferrer')
+          return
+        }
+      }
+
+      // Safe Fallback link
+      window.open(`https://www.amazon.in/s?k=${encodeURIComponent(title + ' ' + author)}`, '_blank')
+    } catch (err) {
+      console.error('Error fetching buy link:', err)
+      window.open(`https://www.amazon.in/s?k=${encodeURIComponent(title + ' ' + author)}`, '_blank')
+    } finally {
+      setResolvingLink(prev => ({ ...prev, [title]: false }))
     }
   }
 
@@ -461,7 +491,7 @@ export default function DiscoverPage() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-sage/5">
+                  <div className="pt-2 border-t border-sage/5 flex flex-col gap-2">
                     <button
                       onClick={() => handleAddRecommendedToShelf(book)}
                       disabled={alreadyAdded}
@@ -480,6 +510,24 @@ export default function DiscoverPage() {
                         <>
                           <Plus className="h-3 w-3" />
                           <span>Add to My Shelf</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => handleBuyClick(book.title, book.author)}
+                      disabled={resolvingLink[book.title]}
+                      className="w-full py-2.5 rounded-xl bg-coral hover:bg-coral/95 text-cream text-[10px] font-black text-center flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                    >
+                      {resolvingLink[book.title] ? (
+                        <>
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                          <span>Finding Best Deal...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Coffee className="h-3 w-3" />
+                          <span>Buy at Lowest Price</span>
                         </>
                       )}
                     </button>

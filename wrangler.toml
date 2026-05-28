@@ -1,5 +1,5 @@
 # Cloudflare Pages — OpenNext Wrangler Configuration
-name = "the-book-club"
+name = "bookclub"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 

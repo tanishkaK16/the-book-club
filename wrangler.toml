@@ -1,0 +1,11 @@
+# Cloudflare Pages Wrangler Configuration File
+name = "the-book-club"
+compatibility_date = "2024-05-02"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = ".vercel/output/static"
+
+[env.production.vars]
+# Sensitive production tokens should be configured securely inside dash.cloudflare.com
+NEXT_PUBLIC_SUPABASE_URL = "https://your-project.supabase.co"

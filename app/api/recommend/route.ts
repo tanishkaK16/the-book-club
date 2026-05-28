@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 
+export const runtime = 'edge'
+
 const groq = new Groq({
   apiKey: process.env.OPENAI_API_KEY, // We are using your Groq key here
 })

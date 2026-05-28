@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         {
           role: "system",
           content: `You are a helpful, cozy book recommendation expert for "The Book Club".
-          Recommend exactly 3 real, popular books based on the user's description.
+          Recommend real, popular books based on the user's description.
           Return ONLY valid JSON in this exact format (no extra text):
           [
             {

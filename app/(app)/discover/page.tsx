@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Sparkles,
   BookOpen,
+  Plus,
+  Check,
   User
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -71,6 +73,7 @@ const genresChipsList = ['All', 'Fantasy', 'Romance', 'Mystery', 'Literary Ficti
 
 export default function DiscoverPage() {
   const supabase = createClient()
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [dbReviews, setDbReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -78,6 +81,11 @@ export default function DiscoverPage() {
   const [trendingBooks, setTrendingBooks] = useState<any[]>([])
   const [monthlyPicksList, setMonthlyPicksList] = useState<any[]>(monthlyPicks)
   const [loadingTrending, setLoadingTrending] = useState(true)
+
+  // Personalized Curation state variables
+  const [recommendedBooks, setRecommendedBooks] = useState<any[]>([])
+  const [loadingRecommendations, setLoadingRecommendations] = useState(true)
+  const [addedBooks, setAddedBooks] = useState<string[]>([])
 
   // Interactive filters states
   const [searchQuery, setSearchQuery] = useState('')
@@ -119,6 +127,110 @@ export default function DiscoverPage() {
     }
     fetchLatestReviews()
   }, [supabase])
+
+  // 1b. Load current user session
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setCurrentUser(session.user)
+      } else {
+        setCurrentUser(null)
+      }
+    }
+    fetchUser()
+  }, [supabase])
+
+  // 1c. Fetch Personalized Recommendations dynamically based on User's Shelf Books
+  useEffect(() => {
+    const fetchPersonalizedRecommendations = async () => {
+      setLoadingRecommendations(true)
+      try {
+        let userBooks: any[] = []
+        if (currentUser) {
+          const { data } = await supabase
+            .from('bookshelf')
+            .select('book_title, book_author, rating')
+          if (data) userBooks = data
+        }
+
+        let promptText = ""
+        if (userBooks.length > 0) {
+          const bookList = userBooks
+            .map((b) => `"${b.book_title}" by ${b.book_author}${b.rating ? ` (rated ${b.rating}/5)` : ''}`)
+            .join(', ')
+          promptText = `Based on my current shelf books: ${bookList}. Please analyze my cozy shelf history, genres, and favorites, and recommend exactly 6 real, highly tailored books that match my taste. Include short, heartwarming reasons (1-2 sentences) under "reason" justifying the selection.`
+        } else {
+          promptText = `Provide 6 cozy, high-quality contemporary and fantasy book recommendations that are popular and loved by readers. Include short, heartwarming reasons (1-2 sentences) under "reason".`
+        }
+
+        const res = await fetch('/api/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: promptText })
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          if (data.recommendations && data.recommendations.length > 0) {
+            setRecommendedBooks(data.recommendations)
+            return
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching personalized recommendations:', err)
+      } finally {
+        setLoadingRecommendations(false)
+      }
+    }
+
+    if (currentUser !== undefined) {
+      fetchPersonalizedRecommendations()
+    }
+  }, [currentUser, supabase])
+
+  // 1d. Add Recommended Book to Supabase Bookshelf
+  const handleAddRecommendedToShelf = async (book: any) => {
+    if (!currentUser) {
+      toast.error('Please log in to add books to your shelf!')
+      return
+    }
+
+    try {
+      const googleId = book.title.replace(/\s+/g, '-').toLowerCase()
+      const payload = {
+        user_id: currentUser.id,
+        book_google_id: googleId,
+        book_title: book.title,
+        book_author: book.author,
+        book_cover_url: book.coverUrl,
+        status: 'TBR',
+        rating: null
+      }
+
+      const { error } = await supabase
+        .from('bookshelf')
+        .insert(payload)
+
+      if (error) {
+        toast.error('This book is already on your shelf!')
+        return
+      }
+
+      setAddedBooks([...addedBooks, book.title])
+      toast.success(`Successfully added "${book.title}" to your library shelf!`)
+      
+      const confetti = (await import('canvas-confetti')).default
+      confetti({
+        particleCount: 80,
+        spread: 50,
+        origin: { y: 0.8 }
+      })
+    } catch (err) {
+      console.error(err)
+      toast.error('Unable to add book to library.')
+    }
+  }
 
   // 2. Fetch real high-res covers for Monthly curated picks
   useEffect(() => {
@@ -274,81 +386,107 @@ export default function DiscoverPage() {
         </div>
       </div>
 
-      {/* SECTION 2: TRENDING & POPULAR GENRES */}
+      {/* SECTION 2: RECOMMENDED FOR YOU (PERSONALIZED CURATIONS) */}
       <div className="space-y-6 pt-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h3 className="font-playfair text-2xl font-black text-warm-brown flex items-center gap-2">
-              <TrendingUp className="h-5.5 w-5.5 text-coral animate-bounce" />
-              <span>Trending This Week</span>
+              <Sparkles className="h-5.5 w-5.5 text-coral animate-spin" style={{ animationDuration: '6s' }} />
+              <span>Recommended For You</span>
             </h3>
             <p className="text-[11px] font-bold text-navy/40 uppercase tracking-widest">
-              Most Reviews & Discussions
+              {currentUser ? 'Highly Tailored Based on Your Shelf & History' : 'Bestsellers and Cozy Curations'}
             </p>
           </div>
 
-          {/* Genre chips filter */}
-          <div className="flex flex-wrap gap-1.5">
-            {genresChipsList.map((genre) => (
-              <button
-                key={genre}
-                onClick={() => setSelectedGenre(genre)}
-                className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border cursor-pointer ${
-                  selectedGenre === genre
-                    ? 'bg-warm-brown text-cream border-warm-brown shadow-sm'
-                    : 'bg-white text-navy/70 border-sage/20 hover:bg-butter/20'
-                }`}
-              >
-                {genre}
-              </button>
-            ))}
-          </div>
+          <span className="text-[10px] font-black uppercase tracking-wider text-coral bg-coral/10 px-3 py-1 rounded-full">
+            AI Assistant
+          </span>
         </div>
 
-        {/* Trending covers grid */}
-        {loadingTrending ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse flex flex-col items-center gap-3">
-                <div className="w-full aspect-[2/3] bg-sage/10 rounded-xl border border-sage/10" />
-                <div className="h-3 w-16 bg-sage/10 rounded" />
-                <div className="h-2 w-10 bg-sage/5 rounded" />
+        {/* Recommended grid layout */}
+        {loadingRecommendations ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="card-cozy bg-white/50 border border-sage/10 p-5 animate-pulse space-y-4">
+                <div className="w-full aspect-[4/3] bg-sage/10 rounded-xl" />
+                <div className="h-4 w-3/4 bg-sage/10 rounded" />
+                <div className="h-3 w-1/2 bg-sage/10 rounded" />
+                <div className="h-10 bg-sage/10 rounded-xl" />
               </div>
             ))}
           </div>
-        ) : filteredTrending.length === 0 ? (
+        ) : recommendedBooks.length === 0 ? (
           <div className="text-center text-xs font-bold text-navy/40 py-8">
-            No trending titles found matching your search and genre tags...
+            Could not fetch recommended stories at this time...
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {filteredTrending.map((book) => (
-              <motion.div
-                key={book.id}
-                whileHover={{ y: -6, rotate: 1.2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="group flex flex-col items-center gap-2 text-center relative cursor-pointer"
-              >
-                {/* Book spine tactile lifts */}
-                <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow border border-sage/10 relative transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-lg">
-                  <img src={book.coverUrl} alt={book.title} className="h-full w-full object-cover" />
-                  
-                  {/* Reviews count pill */}
-                  <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/65 text-white text-[8px] font-black tracking-wide">
-                    {book.reviewsCount} reviews
-                  </span>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recommendedBooks.map((book, idx) => {
+              const alreadyAdded = addedBooks.includes(book.title)
+              return (
+                <motion.div
+                  key={idx}
+                  whileHover={{ y: -6, scale: 1.015 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="card-cozy bg-white border border-sage/15 p-5 flex flex-col justify-between gap-6 relative overflow-hidden group"
+                >
+                  <div className="space-y-4">
+                    {/* Polaroid Cover Aspect ratio */}
+                    <div className="w-full aspect-[4/3] rounded-xl overflow-hidden shadow border border-sage/10 relative transform transition-transform duration-300 group-hover:scale-[1.02] bg-cream/30 flex items-center justify-center">
+                      <img src={book.coverUrl} alt={book.title} className="h-full w-full object-cover" />
+                      {book.pageCount && (
+                        <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-black/60 text-white text-[9px] font-black uppercase">
+                          {book.pageCount} pages
+                        </span>
+                      )}
+                    </div>
 
-                <div className="w-full px-1 min-w-0">
-                  <h5 className="font-playfair text-[10px] font-black text-warm-brown truncate leading-tight group-hover:text-coral transition-colors">
-                    {book.title}
-                  </h5>
-                  <p className="text-[9px] font-bold text-navy/40 truncate">
-                    {book.author}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+                    <div className="space-y-2">
+                      <div>
+                        {book.genres && book.genres.length > 0 && (
+                          <span className="text-[9px] font-black uppercase text-coral tracking-wider">
+                            {book.genres[0]}
+                          </span>
+                        )}
+                        <h4 className="font-playfair text-base font-black text-warm-brown leading-snug line-clamp-1">
+                          {book.title}
+                        </h4>
+                        <p className="text-[10px] font-bold text-navy/55">by {book.author}</p>
+                      </div>
+
+                      <p className="text-[11px] font-semibold text-navy/70 leading-relaxed pt-2 border-t border-sage/5">
+                        {book.reason}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-sage/5">
+                    <button
+                      onClick={() => handleAddRecommendedToShelf(book)}
+                      disabled={alreadyAdded}
+                      className={`w-full py-2.5 rounded-xl text-[10px] font-black text-center flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                        alreadyAdded
+                          ? 'bg-sage/15 text-sage border border-sage/20'
+                          : 'bg-warm-brown hover:bg-warm-brown/95 text-cream shadow-sm'
+                      }`}
+                    >
+                      {alreadyAdded ? (
+                        <>
+                          <Check className="h-3 w-3" />
+                          <span>Added to Shelf</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-3 w-3" />
+                          <span>Add to My Shelf</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </div>

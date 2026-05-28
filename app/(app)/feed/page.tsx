@@ -274,45 +274,68 @@ export default function FeedPage() {
       return
     }
 
-    // Find the review to update optimistically
     const oldReviews = [...reviews]
-    const updated = reviews.map((r) => {
+    const oldSelectedReview = selectedReview ? { ...selectedReview } : null
+
+    // Determine the target review from active list or selected details
+    const targetReview = reviews.find((r) => r.id === reviewId) || (selectedReview?.id === reviewId ? selectedReview : null)
+    if (!targetReview) return
+
+    const isLiking = !targetReview.liked_by_me
+    const newLikesCount = isLiking ? targetReview.likes_count + 1 : Math.max(0, targetReview.likes_count - 1)
+
+    // 1. Update main reviews list state optimistically
+    setReviews(reviews.map((r) => {
       if (r.id === reviewId) {
-        const isLiking = !r.liked_by_me
         return {
           ...r,
           liked_by_me: isLiking,
-          likes_count: isLiking ? r.likes_count + 1 : Math.max(0, r.likes_count - 1)
+          likes_count: newLikesCount
         }
       }
       return r
-    })
-    setReviews(updated)
+    }))
 
-    const targetReview = reviews.find((r) => r.id === reviewId)
-    if (!targetReview || reviewId.startsWith('mock-')) {
-      toast.success(targetReview?.liked_by_me ? 'Unliked!' : 'Loved!')
-      return // Don't push mock interactions to real Supabase
+    // 2. Update selected review modal details state if active
+    if (selectedReview && selectedReview.id === reviewId) {
+      setSelectedReview({
+        ...selectedReview,
+        liked_by_me: isLiking,
+        likes_count: newLikesCount
+      })
+    }
+
+    if (reviewId.startsWith('mock-')) {
+      toast.success(isLiking ? 'Loved!' : 'Unliked!')
+      return
     }
 
     try {
-      if (targetReview.liked_by_me) {
-        // Delete like
-        await supabase
+      if (!isLiking) {
+        // Delete like from Supabase (since it was liked, and we are unliking)
+        const { error } = await supabase
           .from('likes')
           .delete()
           .eq('user_id', currentUser.id)
           .eq('review_id', reviewId)
+
+        if (error) throw error
       } else {
-        // Insert like
-        await supabase
+        // Insert like into Supabase (since it wasn't liked, and we are liking)
+        const { error } = await supabase
           .from('likes')
           .insert({ user_id: currentUser.id, review_id: reviewId })
+
+        if (error) throw error
       }
     } catch (err) {
+      console.error('Error toggling like in database:', err)
       // Revert optimistic updates
       setReviews(oldReviews)
-      toast.error('An error occurred updating the database.')
+      if (oldSelectedReview) {
+        setSelectedReview(oldSelectedReview)
+      }
+      toast.error('Could not update like status.')
     }
   }
 

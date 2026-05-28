@@ -20,7 +20,7 @@ export default function Footer() {
             <Heart className="inline-block h-4 w-4 text-coral fill-current mx-0.5" /> for readers around the world.
           </p>
           <p className="text-[10px] text-cream/55 font-bold uppercase tracking-widest">
-            Crafted with passion & ❤️ by Antigravity
+            Crafted with passion & ❤️ by The Book Club Team
           </p>
         </div>
 

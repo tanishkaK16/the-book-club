@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   description: 'A cozy, beautiful, and interactive space for readers to share shelves, swap stories, and explore literature together.',
   keywords: ['books', 'reading circle', 'book tracker', 'book swap', 'book exchange', 'AI book recommendations', 'cozy reading room'],
-  authors: [{ name: 'Antigravity & The Book Club Team' }],
+  authors: [{ name: 'The Book Club Team' }],
   creator: 'The Book Club Community',
   openGraph: {
     type: 'website',

@@ -371,6 +371,45 @@ export default function ShelfPage() {
     }
   }
 
+  // Instant Mark Book as Read
+  const handleMarkAsRead = async (item: any) => {
+    try {
+      if (!item.is_mock) {
+        const { error } = await supabase
+          .from('bookshelf')
+          .update({ status: 'Read' })
+          .eq('id', item.id)
+
+        if (error) throw error
+      }
+
+      setShelfItems(
+        shelfItems.map((shelfItem) =>
+          shelfItem.id === item.id ? { ...shelfItem, status: 'Read' } : shelfItem
+        )
+      )
+
+      toast.success(`Marked "${item.book_title}" as Read! 📖`)
+      confetti({
+        particleCount: 100,
+        spread: 60,
+        origin: { y: 0.6 }
+      })
+
+      // Ask if they want to rate and review it
+      toast('Share your thoughts!', {
+        description: `Would you like to write a quick review for "${item.book_title}"?`,
+        action: {
+          label: 'Write Review',
+          onClick: () => handleOpenReviewModal(item)
+        }
+      })
+    } catch (err) {
+      console.error(err)
+      toast.error('Could not update book status.')
+    }
+  }
+
   // Filter shelf items
   const filteredItems = shelfItems.filter((item) => {
     if (filterStatus === 'All') return true
@@ -675,6 +714,16 @@ export default function ShelfPage() {
 
                   {/* FLOATING ACTION OVERLAY CONTROLS */}
                   <div className="absolute inset-0 bg-black/65 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-2.5 p-3 z-10 w-24 h-36 md:w-28 md:h-40">
+                    {item.status === 'TBR' && (
+                      <button
+                        onClick={() => handleMarkAsRead(item)}
+                        className="w-full py-1.5 rounded-lg bg-sage text-white hover:bg-sage/90 text-[9px] font-black text-center transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+                      >
+                        <Check className="h-2.5 w-2.5" />
+                        <span>Mark as Read</span>
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleOpenReviewModal(item)}
                       className="w-full py-1.5 rounded-lg bg-cream text-warm-brown hover:bg-butter text-[9px] font-black text-center transition-all cursor-pointer flex items-center justify-center gap-1"

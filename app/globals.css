@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-pink: #FADADD;
+  --color-cream: #FDF6E3;
+  --color-navy: #2C3E50;
+  --color-sage: #A8B5A2;
+  --color-butter: #F5E6C8;
+  --color-coral: #E88B7D;
+  --color-warm-brown: #3F2A1D;
+
+  --font-playfair: var(--font-playfair);
+  --font-inter: var(--font-inter);
+}
+
+:root {
+  --background: #FDF6E3; /* cream */
+  --foreground: #2C3E50; /* navy */
+  --font-inter: "Inter", sans-serif;
+  --font-playfair: "Playfair Display", serif;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-playfair), serif;
+  font-weight: 700;
+  color: #3F2A1D; /* warm-brown heading color */
+}
+
+/* Warm focus rings */
+*:focus-visible {
+  outline: 2px solid #E88B7D; /* coral focus ring */
+  outline-offset: 2px;
+}
+
+/* Cozy button styles */
+.btn-cozy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px; /* Pill layout */
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.btn-cozy-primary {
+  background-color: #3F2A1D; /* warm brown */
+  color: #FDF6E3; /* cream */
+  box-shadow: 0 4px 10px rgba(63, 42, 29, 0.15);
+}
+
+.btn-cozy-primary:hover {
+  background-color: #2C3E50; /* navy */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(44, 62, 80, 0.2);
+}
+
+.btn-cozy-secondary {
+  background-color: #FADADD; /* primary pink */
+  color: #3F2A1D; /* warm brown */
+  box-shadow: 0 4px 10px rgba(250, 218, 221, 0.3);
+}
+
+.btn-cozy-secondary:hover {
+  background-color: #E88B7D; /* coral */
+  color: #FDF6E3; /* cream */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(232, 139, 125, 0.25);
+}
+
+.btn-cozy-outline {
+  border: 2px solid #3F2A1D;
+  color: #3F2A1D;
+  background-color: transparent;
+}
+
+.btn-cozy-outline:hover {
+  background-color: #3F2A1D;
+  color: #FDF6E3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(63, 42, 29, 0.1);
+}
+
+/* Soft shadows & rounded-3xl defaults */
+.card-cozy {
+  background-color: #ffffff;
+  border-radius: 1.5rem; /* rounded-3xl */
+  padding: 1.75rem;
+  box-shadow: 0 10px 30px rgba(63, 42, 29, 0.05);
+  border: 1px solid rgba(168, 181, 162, 0.25); /* soft sage border */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-cozy:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(63, 42, 29, 0.08);
+}
+
+/* Masonry grid utility */
+.masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Decorative stars animations */
+@keyframes sparkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.sparkle-icon {
+  animation: sparkle 3s infinite ease-in-out;
+}

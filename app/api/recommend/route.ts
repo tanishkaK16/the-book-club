@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         try {
           const searchQuery = `${rec.title} ${rec.author}`
           const googleResponse = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${process.env.GOOGLE_BOOKS_API_KEY}`
           )
 
           if (!googleResponse.ok) {

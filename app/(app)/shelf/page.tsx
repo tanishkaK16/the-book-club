@@ -455,6 +455,113 @@ export default function ShelfPage() {
         </button>
       </div>
 
+      {/* 📚 Reading Progress & Habit Tracker */}
+      <div className="card-cozy bg-white/70 backdrop-blur-sm border border-sage/20 p-6 md:p-8 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="font-playfair text-xl font-bold text-warm-brown flex items-center gap-2">
+              <Award className="h-5.5 w-5.5 text-coral animate-bounce" />
+              <span>Sanctuary Reading Progress</span>
+            </h3>
+            <p className="text-xs text-navy/60 font-semibold">
+              Celebrate your calm reading ritual and track your yearly goal.
+            </p>
+          </div>
+
+          {/* Goal Adjustment Controls */}
+          <div className="flex items-center gap-3 bg-cream/30 border border-sage/15 px-3 py-1.5 rounded-2xl">
+            <span className="text-[10px] font-black uppercase text-warm-brown">Yearly Goal:</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setReadingGoal(Math.max(1, readingGoal - 1))}
+                className="h-6 w-6 rounded-lg bg-white border border-sage/20 flex items-center justify-center text-navy/70 hover:bg-coral hover:text-white transition-colors cursor-pointer"
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <span className="text-xs font-black text-warm-brown min-w-[20px] text-center">{readingGoal}</span>
+              <button 
+                onClick={() => setReadingGoal(readingGoal + 1)}
+                className="h-6 w-6 rounded-lg bg-white border border-sage/20 flex items-center justify-center text-navy/70 hover:bg-coral hover:text-white transition-colors cursor-pointer"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+          <div className="bg-cream/15 p-4 rounded-2xl border border-sage/10 text-center space-y-1">
+            <span className="text-[9px] font-black uppercase text-warm-brown/65 tracking-wider">Books Read</span>
+            <div className="font-playfair text-2xl font-black text-coral">{totalRead}</div>
+          </div>
+          <div className="bg-cream/15 p-4 rounded-2xl border border-sage/10 text-center space-y-1">
+            <span className="text-[9px] font-black uppercase text-warm-brown/65 tracking-wider">Goal Progress</span>
+            <div className="font-playfair text-2xl font-black text-warm-brown">
+              {Math.min(100, Math.round((totalRead / readingGoal) * 100))}%
+            </div>
+          </div>
+          <div className="bg-cream/15 p-4 rounded-2xl border border-sage/10 text-center space-y-1">
+            <span className="text-[9px] font-black uppercase text-warm-brown/65 tracking-wider">Average Rating</span>
+            <div className="font-playfair text-2xl font-black text-coral">{averageRating} ★</div>
+          </div>
+          <div className="bg-cream/15 p-4 rounded-2xl border border-sage/10 text-center space-y-1">
+            <span className="text-[9px] font-black uppercase text-warm-brown/65 tracking-wider">Want To Read</span>
+            <div className="font-playfair text-2xl font-black text-warm-brown">{totalTbr}</div>
+          </div>
+        </div>
+
+        {/* 📚 Little tactile Bookshelf Spine Visual Progression */}
+        <div className="space-y-2 pt-2">
+          <div className="flex justify-between items-center text-[10px] font-black uppercase text-warm-brown/60 px-1">
+            <span>Bookshelf Visual Progress</span>
+            <span>{totalRead} / {readingGoal} Books</span>
+          </div>
+
+          <div className="relative w-full bg-cream/10 border-b-8 border-warm-brown/30 rounded-t-xl px-4 pt-12 pb-0 min-h-[96px] flex items-end gap-1.5 overflow-x-auto shadow-inner">
+            {totalRead === 0 ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 space-y-1">
+                <Coffee className="h-5 w-5 text-warm-brown/30" />
+                <span className="text-[10px] font-bold text-navy/45">Your visual progress bookshelf is clean and waiting. Start reading to place spines here! ☕</span>
+              </div>
+            ) : (
+              // Map each read book into a gorgeous custom colored, tactile spine on the shelf
+              readBooks.map((item, index) => {
+                const colorClass = spineColors[index % spineColors.length]
+                // Vary heights slightly for a charming look
+                const heightClass = index % 3 === 0 ? 'h-14' : index % 3 === 1 ? 'h-16' : 'h-15'
+                // Vary angles slightly
+                const rotateClass = index % 4 === 0 ? 'rotate-1' : index % 4 === 1 ? '-rotate-1' : index % 4 === 2 ? 'rotate-[2deg]' : '-rotate-[2deg]'
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, scaleY: 0 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 15, delay: index * 0.05 }}
+                    className={`w-6 border-t-2 border-x ${colorClass} ${heightClass} ${rotateClass} rounded-t-sm shadow-sm flex-shrink-0 flex items-center justify-center relative group cursor-help`}
+                    title={`${item.book_title} by ${item.book_author}`}
+                  >
+                    {/* Golden decorative accent lines on spines */}
+                    <div className="absolute top-2 left-0.5 right-0.5 h-0.5 bg-yellow-100/35" />
+                    <div className="absolute bottom-2 left-0.5 right-0.5 h-0.5 bg-yellow-100/35" />
+                    
+                    {/* Tactile spine vertical text preview on hover */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 bg-warm-brown text-cream text-[8px] px-2 py-1 rounded shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-35 mb-2">
+                      <span className="font-bold">{item.book_title}</span>
+                    </div>
+
+                    {/* Tiny star indication on spine if rated */}
+                    {item.rating && (
+                      <span className="text-[7px] text-yellow-100/70 font-black">★</span>
+                    )}
+                  </motion.div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 bg-white/40 p-1.5 rounded-2xl border border-sage/20 max-w-sm">
         {(['All', 'Read', 'TBR'] as const).map((status) => (

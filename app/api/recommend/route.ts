@@ -62,56 +62,75 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to parse AI response." }, { status: 500 })
     }
 
-    // 2. Enrich each book with a high-quality cover from Google Books
-    //    Uses private GOOGLE_BOOKS_API_KEY — never exposed to the browser
+    // 2. Enrich each book with covers — tries 3 sources in order:
+    //    Google Books → Open Library → Unsplash themed fallback
     const googleApiKey = process.env.GOOGLE_BOOKS_API_KEY
 
     const enriched = await Promise.all(
       recommendations.map(async (rec: any) => {
+        let coverUrl: string | null = null
+        let pageCount = rec.pageCount || 300
+        let infoLink = `https://books.google.com/books?q=${encodeURIComponent(rec.title + ' ' + rec.author)}`
+
+        // --- Source 1: Google Books ---
         try {
           const searchQuery = `intitle:${rec.title} inauthor:${rec.author}`
           const googleRes = await fetch(
             `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=1&printType=books&langRestrict=en${googleApiKey ? `&key=${googleApiKey}` : ''}`
           )
+          if (googleRes.ok) {
+            const googleData = await googleRes.json()
+            const volume = googleData.items?.[0]?.volumeInfo
+            const rawCover =
+              volume?.imageLinks?.extraLarge ||
+              volume?.imageLinks?.large ||
+              volume?.imageLinks?.medium ||
+              volume?.imageLinks?.thumbnail ||
+              null
 
-          if (!googleRes.ok) throw new Error(`Google Books HTTP ${googleRes.status}`)
-
-          const googleData = await googleRes.json()
-          const volume = googleData.items?.[0]?.volumeInfo
-
-          // Prefer highest resolution available; fall back down the chain
-          const rawCover =
-            volume?.imageLinks?.extraLarge ||
-            volume?.imageLinks?.large ||
-            volume?.imageLinks?.medium ||
-            volume?.imageLinks?.thumbnail ||
-            null
-
-          // Upgrade to HTTPS and bump zoom level for crisper images
-          const coverUrl = rawCover
-            ? rawCover
+            if (rawCover) {
+              coverUrl = rawCover
                 .replace('http:', 'https:')
                 .replace('zoom=1', 'zoom=3')
                 .replace('&edge=curl', '')
-            : `https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400&h=600`
-
-          return {
-            ...rec,
-            coverUrl,
-            pageCount: volume?.pageCount || rec.pageCount || 300,
-            infoLink: googleData.items?.[0]?.volumeInfo?.infoLink ||
-              `https://books.google.com/books?q=${encodeURIComponent(rec.title + ' ' + rec.author)}`
+            }
+            if (volume?.pageCount) pageCount = volume.pageCount
+            if (volume?.infoLink) infoLink = volume.infoLink
           }
         } catch (err) {
-          console.error(`Google Books fetch failed for "${rec.title}":`, err)
-          // Fallback: warm cozy book-themed Unsplash photo
-          return {
-            ...rec,
-            coverUrl: `https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400&h=600`,
-            pageCount: rec.pageCount || 300,
-            infoLink: `https://books.google.com/books?q=${encodeURIComponent(rec.title + ' ' + rec.author)}`
+          console.error(`Google Books failed for "${rec.title}":`, err)
+        }
+
+        // --- Source 2: Open Library (no API key, covers ~90% of books) ---
+        if (!coverUrl) {
+          try {
+            const olRes = await fetch(
+              `https://openlibrary.org/search.json?title=${encodeURIComponent(rec.title)}&author=${encodeURIComponent(rec.author)}&limit=1&fields=cover_i`
+            )
+            if (olRes.ok) {
+              const olData = await olRes.json()
+              const coverId = olData.docs?.[0]?.cover_i
+              if (coverId) {
+                coverUrl = `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+              }
+            }
+          } catch (err) {
+            console.error(`Open Library failed for "${rec.title}":`, err)
           }
         }
+
+        // --- Source 3: Unsplash book-themed fallback (always works) ---
+        if (!coverUrl) {
+          // Pick from a curated set of warm cozy book photos
+          const fallbacks = [
+            'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400&h=600',
+            'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400&h=600',
+            'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=400&h=600',
+          ]
+          coverUrl = fallbacks[Math.floor(Math.random() * fallbacks.length)]
+        }
+
+        return { ...rec, coverUrl, pageCount, infoLink }
       })
     )
 

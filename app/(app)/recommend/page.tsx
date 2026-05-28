@@ -294,7 +294,29 @@ export default function RecommendPage() {
                     <div className="space-y-4">
                       {/* Polaroid Cover Aspect ratio */}
                       <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow border border-sage/10 relative transform transition-transform duration-300 group-hover:scale-[1.02]">
-                        <img src={book.coverUrl} alt={book.title} className="h-full w-full object-cover" />
+                        <img
+                          src={book.coverUrl}
+                          alt={book.title}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget
+                            // Try Open Library cover as second chance
+                            if (!target.dataset.triedFallback) {
+                              target.dataset.triedFallback = 'true'
+                              target.src = `https://covers.openlibrary.org/b/title/${encodeURIComponent(book.title)}-L.jpg`
+                            } else {
+                              // Final fallback: hide img, show gradient placeholder
+                              target.style.display = 'none'
+                              const parent = target.parentElement
+                              if (parent && !parent.querySelector('.cover-placeholder')) {
+                                const placeholder = document.createElement('div')
+                                placeholder.className = 'cover-placeholder h-full w-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-butter via-primary-pink to-coral/30'
+                                placeholder.innerHTML = `<span style="font-size:2rem">📚</span><span style="font-size:0.6rem;font-weight:800;text-align:center;padding:0 8px;color:#5c3d2e;opacity:0.8">${book.title}</span>`
+                                parent.appendChild(placeholder)
+                              }
+                            }
+                          }}
+                        />
                         
                         {/* Page count overlay badge */}
                         <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-black/60 text-white text-[9px] font-black uppercase">

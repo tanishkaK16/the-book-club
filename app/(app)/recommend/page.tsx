@@ -101,9 +101,10 @@ export default function RecommendPage() {
     }
 
     try {
+      const googleId = book.title.replace(/\s+/g, '-').toLowerCase()
       const payload = {
         user_id: currentUser.id,
-        book_google_id: book.coverSearchQuery.replace(/\s+/g, '-').toLowerCase(),
+        book_google_id: googleId,
         book_title: book.title,
         book_author: book.author,
         book_cover_url: book.coverUrl,
@@ -128,6 +129,7 @@ export default function RecommendPage() {
         origin: { y: 0.8 }
       })
     } catch (err) {
+      console.error('Error adding AI book to shelf:', err)
       toast.error('Unable to add book to library.')
     }
   }

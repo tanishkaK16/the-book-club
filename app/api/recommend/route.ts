@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Groq from 'groq-sdk'
-
-const groq = new Groq({
-  apiKey: process.env.OPENAI_API_KEY!,
-})
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,30 +11,47 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: `You are a helpful book recommendation expert. 
-          Recommend exactly 3 real books. Return ONLY valid JSON in this format:
-          [
-            {
-              "title": "Book Title",
-              "author": "Author Name",
-              "year": 2023,
-              "reason": "Short warm explanation",
-              "genres": ["Fantasy", "Romance"]
-            }
-          ]`
-        },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 600,
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: `You are a helpful book recommendation expert. 
+            Recommend exactly 3 real books. Return ONLY valid JSON:
+            [
+              {
+                "title": "Book Title",
+                "author": "Author Name",
+                "year": 2023,
+                "reason": "Short warm explanation",
+                "genres": ["Fantasy", "Romance"]
+              }
+            ]`
+          },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 600,
+      }),
     })
 
-    let content = completion.choices[0]?.message?.content || ""
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Groq API Error:", errorText)
+      return NextResponse.json(
+        { error: "Failed to get recommendations from AI." },
+        { status: 500 }
+      )
+    }
+
+    const data = await response.json()
+    let content = data.choices[0]?.message?.content || ""
     content = content.replace(/```json|```/g, "").trim()
 
     const recommendations = JSON.parse(content)
@@ -51,8 +63,8 @@ export async function POST(req: NextRequest) {
           const res = await fetch(
             `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(rec.title + " " + rec.author)}&maxResults=1&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
           )
-          const data = await res.json()
-          const book = data.items?.[0]
+          const bookData = await res.json()
+          const book = bookData.items?.[0]
 
           return {
             ...rec,

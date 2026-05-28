@@ -52,28 +52,22 @@ export async function POST(req: NextRequest) {
 
     const recommendations = JSON.parse(content)
 
-    // Enrich with Google Books covers (with strong error handling)
+    // Enrich with Open Library covers (more stable on Cloudflare)
     const enriched = await Promise.all(
       recommendations.map(async (rec: any) => {
         try {
-          const searchQuery = `${rec.title} ${rec.author}`
-          const googleRes = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
-          )
+          // Use Open Library for covers (more reliable)
+          const coverUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(rec.title)}-L.jpg?default=false`
 
-          if (!googleRes.ok) throw new Error("Google Books failed")
-
-          const googleData = await googleRes.json()
-          const book = googleData.items?.[0]
+          // Check if cover exists
+          const coverCheck = await fetch(coverUrl, { method: 'HEAD' })
 
           return {
             ...rec,
-            cover: book?.volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:') ||
-              `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/400`,
-            pageCount: book?.volumeInfo?.pageCount || 300
+            cover: coverCheck.ok ? coverUrl : `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/400`,
+            pageCount: 300
           }
         } catch {
-          // Safe fallback
           return {
             ...rec,
             cover: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/400`,

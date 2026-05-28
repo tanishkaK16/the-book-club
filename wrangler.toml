@@ -1,11 +1,19 @@
-# Cloudflare Pages Wrangler Configuration File
+# Cloudflare Pages — OpenNext Wrangler Configuration
 name = "the-book-club"
-compatibility_date = "2024-05-02"
+compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
-[site]
-bucket = ".vercel/output/static"
+# Main entry point produced by opennextjs-cloudflare
+main = ".open-next/worker.js"
 
-[env.production.vars]
-# Sensitive production tokens should be configured securely inside dash.cloudflare.com
-NEXT_PUBLIC_SUPABASE_URL = "https://your-project.supabase.co"
+# Static assets bucket
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+
+# KV namespace required by OpenNext for incremental cache (ISR)
+# Create this in your Cloudflare dashboard and paste the ID below:
+# [[kv_namespaces]]
+# binding = "NEXT_CACHE_WORKERS_KV"
+# id = "YOUR_KV_NAMESPACE_ID_HERE"
+
+[build]
+command = "npm run build"

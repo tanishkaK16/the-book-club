@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Call Groq
+    // 1. Get recommendations from Groq
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -23,14 +23,15 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: "system",
-            content: `You are a helpful book recommendation expert. 
-            Recommend exactly 3 real books. Return ONLY valid JSON:
+            content: `You are a helpful book recommendation expert for "The Book Club".
+            Recommend exactly 3 real, popular books based on the user's description.
+            Return ONLY valid JSON in this exact format (no extra text):
             [
               {
                 "title": "Book Title",
                 "author": "Author Name",
                 "year": 2023,
-                "reason": "Short warm explanation",
+                "reason": "Short warm explanation why it matches (2-3 sentences)",
                 "genres": ["Fantasy", "Romance"]
               }
             ]`
@@ -38,51 +39,71 @@ export async function POST(req: NextRequest) {
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: 700,
       }),
     })
 
     if (!groqResponse.ok) {
-      return NextResponse.json({ error: "AI service error" }, { status: 500 })
+      const errorText = await groqResponse.text()
+      console.error("Groq Error:", errorText)
+      return NextResponse.json(
+        { error: "Failed to get recommendations from AI." },
+        { status: 500 }
+      )
     }
 
     const groqData = await groqResponse.json()
-    let content = groqData.choices[0]?.message?.content || ""
+    let content = groqData.choices?.[0]?.message?.content || ""
     content = content.replace(/```json|```/g, "").trim()
 
-    const recommendations = JSON.parse(content)
+    let recommendations = []
+    try {
+      recommendations = JSON.parse(content)
+    } catch (e) {
+      return NextResponse.json(
+        { error: "Failed to parse AI response." },
+        { status: 500 }
+      )
+    }
 
-    // Enrich with Open Library covers (more stable on Cloudflare)
-    const enriched = await Promise.all(
+    // 2. Enrich with Google Books covers
+    const enrichedRecommendations = await Promise.all(
       recommendations.map(async (rec: any) => {
         try {
-          // Use Open Library for covers (more reliable)
-          const coverUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(rec.title)}-L.jpg?default=false`
+          const searchQuery = `${rec.title} ${rec.author}`
+          const googleResponse = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
+          )
 
-          // Check if cover exists
-          const coverCheck = await fetch(coverUrl, { method: 'HEAD' })
-
-          return {
-            ...rec,
-            cover: coverCheck.ok ? coverUrl : `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/400`,
-            pageCount: 300
+          if (!googleResponse.ok) {
+            throw new Error("Google Books API failed")
           }
-        } catch {
+
+          const googleData = await googleResponse.json()
+          const book = googleData.items?.[0]
+
           return {
             ...rec,
-            cover: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/400`,
-            pageCount: 300
+            cover: book?.volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
+            pageCount: book?.volumeInfo?.pageCount || null
+          }
+        } catch (error) {
+          // Return without cover if Google Books fails
+          return {
+            ...rec,
+            cover: null,
+            pageCount: null
           }
         }
       })
     )
 
-    return NextResponse.json({ recommendations: enriched })
+    return NextResponse.json({ recommendations: enrichedRecommendations })
 
   } catch (error: any) {
-    console.error("Recommendation Error:", error)
+    console.error("Recommendation Route Error:", error)
     return NextResponse.json(
-      { error: "Failed to get recommendations." },
+      { error: "Failed to get recommendations. Please try again." },
       { status: 500 }
     )
   }

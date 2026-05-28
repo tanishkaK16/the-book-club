@@ -42,12 +42,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error("Groq API Error:", errorText)
-      return NextResponse.json(
-        { error: "Failed to get recommendations from AI." },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "AI service error" }, { status: 500 })
     }
 
     const data = await response.json()
@@ -56,38 +51,13 @@ export async function POST(req: NextRequest) {
 
     const recommendations = JSON.parse(content)
 
-    // Enrich with Google Books covers
-    const enriched = await Promise.all(
-      recommendations.map(async (rec: any) => {
-        try {
-          const res = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(rec.title + " " + rec.author)}&maxResults=1&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
-          )
-          const bookData = await res.json()
-          const book = bookData.items?.[0]
-
-          return {
-            ...rec,
-            cover: book?.volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:') ||
-              "https://picsum.photos/id/1015/300/400",
-            pageCount: book?.volumeInfo?.pageCount || 300
-          }
-        } catch {
-          return {
-            ...rec,
-            cover: "https://picsum.photos/id/1015/300/400",
-            pageCount: 300
-          }
-        }
-      })
-    )
-
-    return NextResponse.json({ recommendations: enriched })
+    // Return without covers for now (to avoid runtime error)
+    return NextResponse.json({ recommendations })
 
   } catch (error: any) {
     console.error("Recommendation Error:", error)
     return NextResponse.json(
-      { error: "Failed to get recommendations. Please try again." },
+      { error: "Failed to get recommendations." },
       { status: 500 }
     )
   }

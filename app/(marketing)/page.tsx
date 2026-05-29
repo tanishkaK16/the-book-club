@@ -303,7 +303,7 @@ export default function LandingPage() {
           <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-butter/10 blur-xl" />
 
           <div className="relative z-10 space-y-4">
-            <h2 className="font-playfair text-3xl md:text-5xl font-extrabold tracking-tight">
+            <h2 className="font-playfair text-3xl md:text-5xl font-extrabold tracking-tight text-cream">
               Your Next Great Read Awaits
             </h2>
             <p className="mx-auto max-w-xl text-sm md:text-base text-cream/80 font-medium">

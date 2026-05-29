@@ -25,36 +25,6 @@ import { createClient } from '@/lib/supabase/client'
 import confetti from 'canvas-confetti'
 
 
-// Cozy fallback bookshelf books
-const defaultShelfBooks = [
-  {
-    id: 'shelf-mock-1',
-    book_title: 'The Midnight Library',
-    book_author: 'Matt Haig',
-    book_cover_url: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400',
-    status: 'Read',
-    rating: 5,
-    is_mock: true
-  },
-  {
-    id: 'shelf-mock-2',
-    book_title: 'The Hobbit',
-    book_author: 'J.R.R. Tolkien',
-    book_cover_url: 'https://images.unsplash.com/photo-1618666012174-83b441c0bc76?auto=format&fit=crop&q=80&w=400',
-    status: 'TBR',
-    rating: null,
-    is_mock: true
-  },
-  {
-    id: 'shelf-mock-3',
-    book_title: 'Normal People',
-    book_author: 'Sally Rooney',
-    book_cover_url: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400',
-    status: 'Read',
-    rating: 4,
-    is_mock: true
-  }
-]
 
 const moodList = ['Cozy', 'Slow-burn', 'Emotional', 'Thrilling', 'Hopeful', 'Dark', 'Spicy', 'Found Family', 'Wholesome', 'Atmospheric']
 
@@ -199,7 +169,7 @@ export default function ShelfPage() {
       toast.success(`"${payload.book_title}" successfully added to your shelf!`)
       
       // Celebrate adding to shelf
-      const activeBooksCount = shelfItems.filter((item) => !item.is_mock).length
+      const activeBooksCount = shelfItems.length
       if (activeBooksCount === 0) {
         // First real book confetti shower!
         confetti({
@@ -229,12 +199,7 @@ export default function ShelfPage() {
   }
 
   // Remove Book from Shelf
-  const handleRemoveFromShelf = async (id: string, title: string, isMock?: boolean) => {
-    if (isMock) {
-      setShelfItems(shelfItems.filter((item) => item.id !== id))
-      toast.success(`Removed mock "${title}" from shelf!`)
-      return
-    }
+  const handleRemoveFromShelf = async (id: string, title: string) => {
 
     try {
       const { error } = await supabase
@@ -342,7 +307,7 @@ export default function ShelfPage() {
       }
 
       // If bookshelf status is TBR, update it to Read since they just reviewed it!
-      if (selectedReviewBook.status === 'TBR' && !selectedReviewBook.is_mock) {
+      if (selectedReviewBook.status === 'TBR') {
         await supabase
           .from('bookshelf')
           .update({ status: 'Read', rating: formRating })
@@ -374,14 +339,12 @@ export default function ShelfPage() {
   // Instant Mark Book as Read
   const handleMarkAsRead = async (item: any) => {
     try {
-      if (!item.is_mock) {
-        const { error } = await supabase
-          .from('bookshelf')
-          .update({ status: 'Read' })
-          .eq('id', item.id)
+      const { error } = await supabase
+        .from('bookshelf')
+        .update({ status: 'Read' })
+        .eq('id', item.id)
 
-        if (error) throw error
-      }
+      if (error) throw error
 
       setShelfItems(
         shelfItems.map((shelfItem) =>
@@ -733,7 +696,7 @@ export default function ShelfPage() {
                     </button>
                     
                     <button
-                      onClick={() => handleRemoveFromShelf(item.id, item.book_title, item.is_mock)}
+                      onClick={() => handleRemoveFromShelf(item.id, item.book_title)}
                       className="w-full py-1.5 rounded-lg bg-coral/20 hover:bg-coral text-coral hover:text-cream text-[9px] font-black text-center transition-all border border-coral/30 cursor-pointer flex items-center justify-center gap-1"
                     >
                       <Trash2 className="h-2.5 w-2.5" />

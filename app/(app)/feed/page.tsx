@@ -28,72 +28,6 @@ import confetti from 'canvas-confetti'
 // Pre-defined cozy mood tags
 const moodList = ['Cozy', 'Slow-burn', 'Emotional', 'Thrilling', 'Hopeful', 'Dark', 'Spicy', 'Found Family', 'Wholesome', 'Atmospheric']
 
-// Static Fallback reviews for instant stunning landing UI
-const staticMockReviews = [
-  {
-    id: 'mock-1',
-    user_id: 'mock-user-1',
-    book_title: 'Before the Coffee Gets Cold',
-    book_author: 'Toshikazu Kawaguchi',
-    book_cover_url: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400',
-    rating: 5,
-    loved: 'The atmospheric, slow-burn nature of the cafe and the beautiful time-travel rules. It felt like a warm hug.',
-    fell_flat: 'Nothing at all! The pacing was perfect for a rainy afternoon read.',
-    overall: 'A heartwarming reminder to appreciate the moments we have with the people we love before it is too late.',
-    mood_tags: ['Cozy', 'Slow-burn', 'Wholesome', 'Atmospheric'],
-    photo_urls: ['https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=600'],
-    likes_count: 24,
-    comments_count: 3,
-    created_at: new Date(Date.now() - 3600000 * 2).toISOString(), // 2h ago
-    liked_by_me: true,
-    profiles: {
-      full_name: 'Clara Oswald',
-      avatar_url: null
-    }
-  },
-  {
-    id: 'mock-2',
-    user_id: 'mock-user-2',
-    book_title: 'The Secret History',
-    book_author: 'Donna Tartt',
-    book_cover_url: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400',
-    rating: 4,
-    loved: 'The dark academia aesthetic, gorgeous prose, and psychological tension that keeps you glued until the last sentence.',
-    fell_flat: 'A bit slow in the middle sections, but the payoff is absolutely worth the build.',
-    overall: 'An exquisite exploration of guilt, classism, and obsession. It stays with you for months.',
-    mood_tags: ['Dark', 'Slow-burn', 'Atmospheric'],
-    photo_urls: [],
-    likes_count: 42,
-    comments_count: 5,
-    created_at: new Date(Date.now() - 3600000 * 6).toISOString(), // 6h ago
-    liked_by_me: false,
-    profiles: {
-      full_name: 'Julian Blackthorn',
-      avatar_url: null
-    }
-  },
-  {
-    id: 'mock-3',
-    user_id: 'mock-user-3',
-    book_title: 'A Court of Thorns and Roses',
-    book_author: 'Sarah J. Maas',
-    book_cover_url: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=400',
-    rating: 5,
-    loved: 'The beautiful world-building of Prythian, the incredible high-stakes romance, and the sheer magical adventure!',
-    fell_flat: 'The first few chapters felt slightly traditional, but once the spring court opens up it becomes spectacular.',
-    overall: 'An addictive, thrilling fantasy romance that completely swept me off my feet. Ready for book two immediately!',
-    mood_tags: ['Spicy', 'Thrilling', 'Found Family'],
-    photo_urls: ['https://images.unsplash.com/photo-1518373714866-3f1478910eb0?auto=format&fit=crop&q=80&w=600'],
-    likes_count: 89,
-    comments_count: 12,
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString(), // 24h ago
-    liked_by_me: false,
-    profiles: {
-      full_name: 'Feyre Archeron',
-      avatar_url: null
-    }
-  }
-]
 
 export default function FeedPage() {
   const router = useRouter()
@@ -305,10 +239,6 @@ export default function FeedPage() {
       })
     }
 
-    if (reviewId.startsWith('mock-')) {
-      toast.success(isLiking ? 'Loved!' : 'Unliked!')
-      return
-    }
 
     try {
       if (!isLiking) {
@@ -480,14 +410,6 @@ export default function FeedPage() {
     setNewCommentContent('')
     setCommentsList([])
     
-    if (review.id.startsWith('mock-')) {
-      // Mock static comments for mockup wows
-      setCommentsList([
-        { id: 'c1', content: 'Oh my! I completely agree with your thoughts on the slow pacing.', profiles: { full_name: 'Elizabeth Bennet' }, created_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: 'c2', content: 'Adding this title to my virtual reading shelf immediately!', profiles: { full_name: 'Mr. Darcy' }, created_at: new Date(Date.now() - 1800000).toISOString() }
-      ])
-      return
-    }
 
     setLoadingComments(true)
     try {
@@ -552,10 +474,6 @@ export default function FeedPage() {
       return r
     }))
 
-    if (selectedReview.id.startsWith('mock-')) {
-      toast.success('Comment posted to fallback!')
-      return
-    }
 
     try {
       const { error } = await supabase

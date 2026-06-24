@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://the-book-club.vercel.app',
+    url: 'https://the-book-club-lilac.vercel.app',
     title: 'The Book Club | Where stories connect us',
     description: 'A cozy, beautiful, and interactive space for readers to share shelves, swap stories, and explore literature together.',
     siteName: 'The Book Club',

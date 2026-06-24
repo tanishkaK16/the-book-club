@@ -370,6 +370,12 @@ drop policy if exists "Users can view their own notifications" on public.notific
 create policy "Users can view their own notifications" on public.notifications
   for select using (auth.uid() = user_id);
 
+-- Notifications are ONLY inserted by security definer triggers (notify_on_like, etc.)
+-- Direct client inserts are explicitly blocked to prevent notification spoofing.
+drop policy if exists "Only system triggers can insert notifications" on public.notifications;
+create policy "Only system triggers can insert notifications" on public.notifications
+  for insert with check (false);
+
 drop policy if exists "Users can update their own notifications" on public.notifications;
 create policy "Users can update their own notifications" on public.notifications
   for update using (auth.uid() = user_id);

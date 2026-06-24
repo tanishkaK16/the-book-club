@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Routes that require authentication
+const APP_ROUTES = ['/feed', '/shelf', '/discover', '/recommend', '/exchange', '/profile']
+
+function isAppRoute(pathname: string): boolean {
+  return APP_ROUTES.some((route) => pathname.startsWith(route))
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -43,17 +50,10 @@ export async function middleware(request: NextRequest) {
     // Refresh session if expired - critical for Server Components
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Protect app routes from unauthenticated users
-    const isAppRoute = request.nextUrl.pathname.startsWith('/feed') ||
-                       request.nextUrl.pathname.startsWith('/shelf') ||
-                       request.nextUrl.pathname.startsWith('/discover') ||
-                       request.nextUrl.pathname.startsWith('/recommend') ||
-                       request.nextUrl.pathname.startsWith('/exchange') ||
-                       request.nextUrl.pathname.startsWith('/profile')
+    const pathname = request.nextUrl.pathname
+    const isAuthRoute = pathname.startsWith('/login')
 
-    const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
-
-    if (isAppRoute && !user) {
+    if (isAppRoute(pathname) && !user) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
@@ -61,7 +61,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/feed', request.url))
     }
   } catch (error) {
-    // Graceful fallback: allow access if auth fails to initialize due to configuration
+    // On auth failure, protect app routes by redirecting to login.
+    // Never silently allow unauthenticated access to protected routes.
+    console.error('[middleware] Auth error — redirecting for safety:', error)
+    if (isAppRoute(request.nextUrl.pathname)) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
   }
 
   return response

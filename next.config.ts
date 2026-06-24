@@ -12,13 +12,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'books.google.com',
       },
+      // lh3.googleusercontent.com removed — Google Sign-In is not used
       {
+        // Scoped to the actual Supabase project instead of *.supabase.co wildcard
         protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
+        hostname: 'xzngvxhnbdgqkzulrpme.supabase.co',
       },
       {
         protocol: 'https',

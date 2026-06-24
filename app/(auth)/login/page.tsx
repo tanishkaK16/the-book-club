@@ -21,7 +21,6 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
   const {
     register,
@@ -70,24 +69,6 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true)
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
-      if (error) {
-        toast.error(error.message || 'Unable to initialize Google Sign In.')
-      }
-    } catch (err) {
-      toast.error('An unexpected error occurred.')
-    } finally {
-      setIsGoogleLoading(false)
-    }
-  }
 
   return (
     <div className="relative min-h-[85vh] flex items-center justify-center bg-cream px-6 py-12">
@@ -165,28 +146,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="relative flex py-1 items-center">
-          <div className="flex-grow border-t border-sage/20"></div>
-          <span className="flex-shrink mx-4 text-xs font-bold text-navy/40 uppercase tracking-widest">or</span>
-          <div className="flex-grow border-t border-sage/20"></div>
-        </div>
-
-        {/* Google Sign In */}
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading}
-          className="btn-cozy btn-cozy-outline w-full py-3.5 flex items-center justify-center gap-2.5 font-bold text-sm bg-white/50 backdrop-blur"
-        >
-          <svg className="h-4 w-4.5" viewBox="0 0 24 24">
-            <path
-              fill="#EA4335"
-              d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.566 0-6.463-2.896-6.463-6.462 0-3.567 2.897-6.463 6.463-6.463 1.548 0 2.966.549 4.084 1.455l3.078-3.078C19.263 2.115 15.986 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.207 0 11.24-5.033 11.24-11.24 0-.768-.073-1.503-.207-2.185l-11.033.03z"
-            />
-          </svg>
-          <span>{isGoogleLoading ? 'Connecting...' : 'Sign in with Google'}</span>
-        </button>
 
         {/* Footer info */}
         <div className="text-center text-xs text-navy/60 font-semibold border-t border-sage/10 pt-4">

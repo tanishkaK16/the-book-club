@@ -13,8 +13,7 @@ import {
   Coffee,
   Heart,
   HelpCircle,
-  TrendingUp,
-  Gift
+  TrendingUp
 } from 'lucide-react'
 
 export default function LandingPage() {
@@ -145,9 +144,6 @@ export default function LandingPage() {
             <h1 className="font-playfair text-5xl md:text-7xl font-extrabold tracking-tight text-warm-brown leading-none">
               THE BOOK CLUB
             </h1>
-            <p className="font-playfair text-xl md:text-3xl font-light italic text-coral tracking-wide">
-              Reimagined
-            </p>
           </div>
 
           {/* Tagline */}
@@ -374,63 +370,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FINAL CTA / WELCOME BOX SECTION */}
-      <section className="mx-auto max-w-4xl px-6 py-20">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={scrollFadeIn}
-          className="card-cozy bg-white border border-sage/30 p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden"
-        >
-          {/* Ornate Gold Border Accent */}
-          <div className="absolute inset-2 border border-warm-brown/5 rounded-[1.25rem] pointer-events-none" />
-
-          {/* Polaroid image placeholder on left */}
-          <div className="w-full md:w-1/2 flex justify-center">
-            <motion.div
-              whileHover={{ rotate: 1 }}
-              className="bg-cream border border-sage/30 p-3 pb-8 rounded-lg shadow-md max-w-[280px] w-full transform -rotate-2"
-            >
-              <div className="aspect-[4/3] w-full bg-primary-pink/40 rounded flex items-center justify-center text-warm-brown relative overflow-hidden">
-                <Gift className="h-12 w-12 text-coral animate-bounce" />
-                <div className="absolute inset-0 bg-gradient-to-t from-warm-brown/10 to-transparent" />
-              </div>
-              <p className="text-center font-playfair text-sm italic font-bold text-warm-brown mt-4 tracking-wider">
-                The Welcome Box Awaits
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Content on right */}
-          <div className="w-full md:w-1/2 space-y-5 text-center md:text-left relative z-10">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-coral uppercase tracking-widest bg-coral/10 px-3 py-1 rounded-full">
-              <Gift className="h-3.5 w-3.5" />
-              <span>Cozy Member Welcome Kit</span>
-            </span>
-            <h2 className="font-playfair text-3xl font-extrabold text-warm-brown leading-tight">
-              Your Welcome Box is Waiting...
-            </h2>
-            <p className="text-sm text-navy/70 leading-relaxed font-semibold">
-              Every new reader receives a physical welcome package containing custom hand-pressed letterpress bookmarks, organic calming reading teas, and stickers for your bookshelf.
-            </p>
-            <div className="pt-2">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block w-full md:w-auto">
-                <Link
-                  href="/login"
-                  className="btn-cozy bg-warm-brown text-cream hover:bg-navy font-bold text-sm px-8 py-3.5 shadow w-full md:w-auto text-center"
-                >
-                  Join the Club
-                </Link>
-              </motion.div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
       {/* Decorative Floating Footer Quote */}
       <div className="py-6 text-center text-xs font-bold text-warm-brown/30 uppercase tracking-widest border-t border-sage/10">
-        THE BOOK CLUB REIMAGINED • EST. 2026
+        THE BOOK CLUB • EST. 2026
       </div>
 
     </div>

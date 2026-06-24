@@ -7,6 +7,7 @@
 -- ============================================================================
 
 -- 1. Create the books table (central source of truth for real book metadata)
+drop table if exists public.books cascade;
 create table if not exists public.books (
   id uuid primary key default gen_random_uuid(),
   google_id text unique,
